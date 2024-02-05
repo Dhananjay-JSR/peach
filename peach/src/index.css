@@ -66,6 +66,8 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
+
+@import url("https://fonts.googleapis.com/css2?family=Protest+Guerrilla&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
