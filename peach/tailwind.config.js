@@ -8,6 +8,9 @@ export default {
     extend: {
       fontFamily: {
         'Protest-Guerrilla': `'Protest Guerrilla', sans-serif`
+      },
+      cursor: {
+        'rotateCUr': 'url(/rotate.svg), auto',
       }
     },
   },
