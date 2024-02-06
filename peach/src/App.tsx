@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   Android,
   PersonCircle,
@@ -8,15 +7,43 @@ import {
   ArrowLeftSquare,
   Activity,
   ArrowRightSquare,
-  CodeSlash,
-  ArrowsExpand,
-  PlusCircle,
+  X,
+  XOctagonFill,
+  Check,
 } from "react-bootstrap-icons";
 import Logo from "./assets/Logo.png";
+import ReactDOM from "react-dom";
 import { cn } from "./lib/utils";
 import React, { MutableRefObject, useEffect, useRef } from "react";
 
-function Handler({ children }: { children?: React.ReactNode }) {
+function Handler({
+  children,
+  ParentNotifier,
+  Position,
+  id,
+  onClose,
+}: {
+  id?: string;
+  onClose?: React.Dispatch<
+    React.SetStateAction<
+      {
+        type: "text" | "sticker";
+        content: string | undefined;
+        id: string;
+        position: {
+          x: number;
+          y: number;
+        };
+      }[]
+    >
+  >;
+  Position: {
+    top: number;
+    left: number;
+  };
+  children?: React.ReactNode;
+  ParentNotifier: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const [mouseDown, setMouseDown] = React.useState(false);
   const [ActionType, setActionType] = React.useState<
     "resize" | "move" | "rotate" | "none"
@@ -24,8 +51,8 @@ function Handler({ children }: { children?: React.ReactNode }) {
 
   const [rotate, setRotate] = React.useState(0);
 
-  const [height, setHeight] = React.useState<undefined | number>(undefined);
-  const [width, setWidth] = React.useState<undefined | number>(undefined);
+  const [height, setHeight] = React.useState<number>(100);
+  const [width, setWidth] = React.useState<number>(100);
   const [transform, setTransform] = React.useState({
     x: 0,
     y: 0,
@@ -39,13 +66,6 @@ function Handler({ children }: { children?: React.ReactNode }) {
   const Ref = useRef<HTMLDivElement>();
 
   useEffect(() => {
-    if (Ref.current) {
-      setHeight(Ref.current.clientHeight - 16);
-      setWidth(Ref.current.clientWidth - 16);
-    }
-  }, []);
-
-  useEffect(() => {
     const MouseMoveEvent = (e: MouseEvent) => {
       if (mouseDown) {
         if (ActionType == "resize") {
@@ -56,12 +76,6 @@ function Handler({ children }: { children?: React.ReactNode }) {
             const DIffX = e.clientX - initialCLickPosition.x;
             const NewWidth = width + DIffX;
             setWidth(NewWidth);
-            const MoveX = transform.x + DIffX / 2;
-            const MoveY = transform.y + Diff / 2;
-            setTransform({
-              x: MoveX,
-              y: MoveY,
-            });
           }
         } else if (ActionType == "move") {
           const DiffX = transform.x + e.clientX - initialCLickPosition.x;
@@ -71,15 +85,18 @@ function Handler({ children }: { children?: React.ReactNode }) {
             y: DiffY,
           });
         } else if (ActionType == "rotate") {
-          const DiffX = e.clientX - initialCLickPosition.x;
-          const DiffY = e.clientY - initialCLickPosition.y;
-          const origin = {
-            x: Ref.current.clientWidth / 2,
-            y: Ref.current.clientHeight / 2,
-          };
-          const Degree =
-            (Math.atan2(DiffY - origin.y, DiffX - origin.x) * 180) / Math.PI;
-          setRotate(Degree);
+          const LocalRef = Ref.current;
+          if (LocalRef) {
+            const DiffX = e.clientX - initialCLickPosition.x;
+            const DiffY = e.clientY - initialCLickPosition.y;
+            const origin = {
+              x: LocalRef.clientWidth / 2,
+              y: LocalRef.clientHeight / 2,
+            };
+            const Degree =
+              (Math.atan2(DiffY - origin.y, DiffX - origin.x) * 180) / Math.PI;
+            setRotate(Degree);
+          }
         }
       }
     };
@@ -91,6 +108,12 @@ function Handler({ children }: { children?: React.ReactNode }) {
     document.addEventListener("mousemove", MouseMoveEvent);
 
     document.addEventListener("mouseup", MouseUpEvent);
+
+    if (mouseDown) {
+      ParentNotifier(true);
+    } else {
+      ParentNotifier(false);
+    }
     return () => {
       document.removeEventListener("mouseup", MouseUpEvent);
       document.removeEventListener("mousemove", MouseMoveEvent);
@@ -100,6 +123,9 @@ function Handler({ children }: { children?: React.ReactNode }) {
   return (
     <div
       style={{
+        position: "absolute",
+        top: `${Position.top}px`,
+        left: `${Position.left}px`,
         transform: `translate(${transform.x}px,${transform.y}px)`,
       }}
     >
@@ -109,27 +135,24 @@ function Handler({ children }: { children?: React.ReactNode }) {
         }}
         ref={Ref as MutableRefObject<HTMLDivElement>}
         className={cn(
-          "p-4 h-full w-full group relative border transition-all border-dashed border-opacity-0 hover:border-opacity-25 active:border-opacity-100 border-white",
-          {}
+          "h-full w-full group relative border transition-all border-dashed border-opacity-0 hover:border-opacity-25 active:border-opacity-100 border-white"
         )}
       >
-        <button
+        <div
           onMouseDown={(e) => {
             setMouseDown(true);
             setInitialCLickPosition({ x: e.clientX, y: e.clientY });
             setActionType("move");
           }}
           style={{
-            transformOrigin: "top left",
-            width: width == undefined ? "34px" : `${width}px`,
+            width: `${width}px`,
             overflow: "hidden",
-
-            height: height == undefined ? "34px" : `${height}px`,
+            height: `${height}px`,
           }}
           className="cursor-move"
         >
           {children}
-        </button>
+        </div>
 
         <button
           onMouseDown={(e) => {
@@ -137,18 +160,47 @@ function Handler({ children }: { children?: React.ReactNode }) {
             setInitialCLickPosition({ x: e.clientX, y: e.clientY });
             setActionType("resize");
           }}
-          className="absolute  opacity-0 group-hover:opacity-100 hover:opacity-100 z-10 h-2 w-2 rounded-full bg-blue-400 bottom-0 cursor-se-resize  right-0 translate-x-1/2 translate-y-1/2"
+          className={cn(
+            "absolute  opacity-0 group-hover:opacity-40  hover:!opacity-100  z-10 h-2 w-2 rounded-full bg-blue-400 bottom-0 cursor-se-resize  right-0 translate-x-1/2 translate-y-1/2",
+            {
+              "!opacity-100": mouseDown,
+            }
+          )}
         />
 
+        <button
+          onMouseDown={() => {
+            setMouseDown(true);
+            if (onClose && id) {
+              onClose((prev) => prev.filter((data) => data.id != id));
+            }
+          }}
+          onMouseUp={() => {
+            setMouseDown(false);
+          }}
+          className="absolute text-red-600 transition-all opacity-0 group-hover:opacity-40 hover:!opacity-100 group-active:opacity-100   top-0 right-0 translate-x-1/2 -translate-y-1/2   "
+        >
+          <XOctagonFill
+            width={12}
+            height={12}
+            className="rounded-full bg-white"
+          />
+        </button>
+
         <div className="absolute border-opacity-0 group-hover:border-opacity-40 group-active:border-opacity-100 border-white  bottom-full left-1/2 border-l  border-dashed">
-          <div className="h-10 w-0.5 relative">
+          <div className="h-4 w-0.5 relative">
             <button
               onMouseDown={(e) => {
                 setMouseDown(true);
                 setInitialCLickPosition({ x: e.clientX, y: e.clientY });
                 setActionType("rotate");
               }}
-              className="h-2 origin-center w-2 bottom-full opacity-0 group-hover:opacity-100 hover:opacity-100 z-10 transition-all rounded-full bg-blue-400 absolute cursor-crosshair  -translate-x-[40%] -left-1/2  "
+              className={cn(
+                "h-2 origin-center w-2  bottom-full opacity-0 group-hover:opacity-40 hover:!opacity-100 z-10 transition-all rounded-full bg-blue-400 absolute cursor-crosshair  -translate-x-[40%] -left-1/2  ",
+                {
+                  "!opacity-100": mouseDown,
+                }
+              )}
             />
           </div>
         </div>
@@ -160,73 +212,340 @@ function Handler({ children }: { children?: React.ReactNode }) {
 function App() {
   const [Overlay, setOverlay] = React.useState<
     {
+      type: "text" | "sticker";
+      content: string | undefined;
+      id: string;
       position: { x: number; y: number };
-      message: string;
     }[]
   >([]);
 
-  // useEffect(() => {
-  //   document.addEventListener("mousemove", (e) => {
-  //     console.log(e.clientX);
-  //     console.log(e.clientY);
-  //   });
-  // }, []);
+  const [ChildrenMoving, setChildrenMoving] = React.useState(false);
 
   const Ref = React.useRef<HTMLDivElement>();
 
-  const HandlerRef = React.useRef<HTMLDivElement>();
+  const [showContextMenu, setShowContextMenu] = React.useState(false);
+  const [ContextMenuPosition, setContextMenuPosition] = React.useState({
+    x: 0,
+    y: 0,
+  });
+  useEffect(() => {
+    function ContextHandler(e: MouseEvent) {
+      e.preventDefault();
+      const LocalRef = Ref.current;
+      if (LocalRef) {
+        if (LocalRef.contains(e.target as Node)) {
+          setShowContextMenu(true);
+          setContextMenuPosition({ x: e.clientX, y: e.clientY });
+        }
+      }
+    }
+
+    document.addEventListener("contextmenu", ContextHandler);
+
+    return () => {
+      document.removeEventListener("contextmenu", ContextHandler);
+    };
+  }, []);
+
+  const StickerExample = ["Hello", "World", "How", "Are", "You"] as const;
 
   return (
     <>
-      {/* <div>
-       
-      </div> */}
+      {showContextMenu ? (
+        <ContextMenuRenderer
+          StickerExample={StickerExample}
+          setOverlay={setOverlay}
+          setShowContextMenu={setShowContextMenu}
+          ChildrenMoving={ChildrenMoving}
+          ContextMenuPosition={ContextMenuPosition}
+          Ref={Ref}
+        />
+      ) : null}
+
       <main className="min-h-screen bg-[#110E1B] grid place-content-center">
-        {/* <Handler /> */}
         <section
           ref={Ref as MutableRefObject<HTMLDivElement>}
-          onClick={(e) => {
-            if (!HandlerRef.current?.contains(e.target as Node)) {
-              const Rect = e.currentTarget.getBoundingClientRect();
-              const X = e.currentTarget.clientHeight; // e.nativeEvent.offsetX
-              const Y = e.currentTarget.clientWidth; // e.nativeEvent.offsetY
-              const CurrentEle = Ref.current;
-              if (CurrentEle) {
-                setOverlay((prev) => [
-                  ...prev,
-                  {
-                    position: {
-                      x: e.clientX - Rect.left,
-                      y: e.clientY - Rect.top,
-                    },
-                    message: "Hello",
-                  },
-                ]);
-              }
-            }
-          }}
           className="h-60 w-80 relative overflow-hidden bg-gray-500"
         >
           {Overlay.map((data) => {
-            return (
-              <div
-                style={{
-                  left: data.position.x,
-                  top: data.position.y,
-                }}
-                ref={HandlerRef as MutableRefObject<HTMLDivElement>}
-                className="absolute z-30"
-              >
-                <Handler>
-                  {" "}
-                  <span>Hello World</span>
+            if (data.type == "text") {
+              if (data.content == undefined) {
+                return (
+                  <TextInputPlaceholder
+                    id={data.id}
+                    position={data.position}
+                    setPlaceholder={setOverlay}
+                  />
+                );
+              } else {
+                return (
+                  <Handler
+                    key={data.id}
+                    id={data.id}
+                    onClose={setOverlay}
+                    Position={{
+                      left: data.position.x,
+                      top: data.position.y,
+                    }}
+                    ParentNotifier={setChildrenMoving}
+                  >
+                    <span className="select-none">{data.content}</span>
+                  </Handler>
+                );
+              }
+            } else if (data.type == "sticker") {
+              return (
+                <Handler
+                  key={data.id}
+                  id={data.id}
+                  onClose={setOverlay}
+                  Position={{
+                    left: data.position.x,
+                    top: data.position.y,
+                  }}
+                  ParentNotifier={setChildrenMoving}
+                >
+                  <img
+                    draggable={false}
+                    src={data.content}
+                    className="select-none"
+                    alt="Sticker"
+                  />
                 </Handler>
-              </div>
-            );
+              );
+            }
+            return null;
           })}
         </section>
       </main>
     </>
+  );
+}
+
+function ContextMenuRenderer({
+  ChildrenMoving,
+  ContextMenuPosition,
+  Ref,
+  StickerExample,
+  setOverlay,
+  setShowContextMenu,
+}: {
+  ContextMenuPosition: {
+    x: number;
+    y: number;
+  };
+  ChildrenMoving: boolean;
+  StickerExample: readonly string[];
+  Ref: React.MutableRefObject<HTMLDivElement | undefined>;
+  setOverlay: React.Dispatch<
+    React.SetStateAction<
+      {
+        type: "text" | "sticker";
+        content: string | undefined;
+        id: string;
+        position: { x: number; y: number };
+      }[]
+    >
+  >;
+  setShowContextMenu: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  useEffect(() => {
+    const KeyDownHandler = (e: KeyboardEvent) => {
+      if (e.key == "Escape") {
+        setShowContextMenu(false);
+      }
+    };
+    document.addEventListener("keydown", KeyDownHandler);
+    return () => {
+      document.removeEventListener("keydown", KeyDownHandler);
+    };
+  }, []);
+
+  return ReactDOM.createPortal(
+    <div
+      style={{
+        zIndex: 99999,
+      }}
+      className="fixed w-screen  h-screen"
+    >
+      <div
+        className=" z-40 w-24 bg-[#110E1B] rounded-sm"
+        style={{
+          position: "absolute",
+          top: `${ContextMenuPosition.y}px`,
+          left: `${ContextMenuPosition.x}px`,
+        }}
+      >
+        <div className="relative">
+          <button
+            onClick={() => {
+              if (!ChildrenMoving) {
+                const PlayerContext = Ref.current;
+                if (PlayerContext) {
+                  const Rect = PlayerContext.getBoundingClientRect();
+                  setOverlay((prev) => [
+                    ...prev,
+                    {
+                      id: Math.random().toString(),
+                      position: {
+                        x: ContextMenuPosition.x - Rect.left,
+                        y: ContextMenuPosition.y - Rect.top,
+                      },
+                      content: undefined,
+                      type: "text",
+                    },
+                  ]);
+                }
+              }
+
+              setShowContextMenu(false);
+            }}
+            className="text-xs w-full text-white py-1 hover:bg-white hover:text-[#110E1B] transition-all"
+          >
+            TEXT
+          </button>
+          <div className="h-[1px] w-[94%] bg-gray-300 my-0.5 mx-auto " />
+          <button className="text-xs peer relative w-full text-white py-1 hover:bg-white hover:text-[#110E1B] transition-all">
+            STICKER <span className="float-right pr-2">{">"}</span>
+          </button>
+          <div className="absolute border-l  bg-[#110E1B] rounded-sm left-full top-0 peer-hover:flex hidden hover:flex  flex-col">
+            {StickerExample.map((d) => (
+              <button
+                onClick={() => {
+                  if (!ChildrenMoving) {
+                    const PlayerContext = Ref.current;
+                    if (PlayerContext) {
+                      const Rect = PlayerContext.getBoundingClientRect();
+                      setOverlay((prev) => [
+                        ...prev,
+                        {
+                          id: Math.random().toString(),
+                          position: {
+                            x: ContextMenuPosition.x - Rect.left,
+                            y: ContextMenuPosition.y - Rect.top,
+                          },
+                          content: Logo,
+                          type: "sticker",
+                        },
+                      ]);
+                    }
+                    setShowContextMenu(false);
+                  }
+                }}
+                className="text-sm  px-2 text-white py-1 hover:bg-white hover:text-[#110E1B] transition-all"
+                key={d}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.getElementById("modal") as HTMLElement
+  );
+}
+
+function TextInputPlaceholder({
+  position,
+  id,
+  setPlaceholder,
+}: {
+  position: {
+    x: number;
+    y: number;
+  };
+  id: string;
+  setPlaceholder: React.Dispatch<
+    React.SetStateAction<
+      {
+        type: "text" | "sticker";
+        content: string | undefined;
+        id: string;
+        position: {
+          x: number;
+          y: number;
+        };
+      }[]
+    >
+  >;
+}) {
+  const [value, setvalue] = React.useState("");
+  const InpuyRef = useRef<HTMLInputElement>();
+
+  useEffect(() => {
+    InpuyRef.current?.focus();
+  }, []);
+  return (
+    <div className="fixed h-screen w-screen">
+      <div className="absolute" style={{ left: position.x, top: position.y }}>
+        <div className="relative">
+          <input
+            ref={InpuyRef as MutableRefObject<HTMLInputElement>}
+            onKeyDown={(e) => {
+              const Key = e.key;
+              if (Key == "Enter") {
+                if (value === "") {
+                  setPlaceholder((prev) =>
+                    prev.filter((data) => data.id != id)
+                  );
+                } else {
+                  setPlaceholder((prev) =>
+                    prev.map((data) => {
+                      if (data.id == id) {
+                        return {
+                          ...data,
+                          content: value,
+                        };
+                      }
+                      return data;
+                    })
+                  );
+                }
+              }
+            }}
+            placeholder="Enter Text Here"
+            type="text"
+            value={value}
+            onChange={(e) => {
+              const value = e.target.value;
+              setvalue(value);
+            }}
+            className=" bg-[#110E1B] border-gray-200 border rounded-sm pr-9 text-white focus:outline-none text-sm py-1 w-36 px-1"
+          />
+          <button
+            onClick={() => {
+              if (value === "") {
+                setPlaceholder((prev) => prev.filter((data) => data.id != id));
+              } else {
+                setPlaceholder((prev) =>
+                  prev.map((data) => {
+                    if (data.id == id) {
+                      return {
+                        ...data,
+                        content: value,
+                      };
+                    }
+                    return data;
+                  })
+                );
+              }
+            }}
+            className="absolute text-white hover:text-green-400 transition-all right-5 top-1/2 -translate-y-1/2"
+          >
+            <Check />
+          </button>
+          <button
+            onClick={() => {
+              setPlaceholder((prev) => prev.filter((data) => data.id != id));
+            }}
+            className="absolute text-white hover:text-red-400 transition-all right-1 top-1/2 -translate-y-1/2"
+          >
+            <X />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
