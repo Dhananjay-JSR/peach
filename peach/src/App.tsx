@@ -1,19 +1,6 @@
-import {
-  Android,
-  PersonCircle,
-  Search,
-  House,
-  Map,
-  ArrowLeftSquare,
-  Activity,
-  ArrowRightSquare,
-  PlayBtnFill,
-} from "react-bootstrap-icons";
+import { PersonCircle, PlayBtnFill } from "react-bootstrap-icons";
 
-import { cn } from "./lib/utils";
 import React, { useContext, useEffect } from "react";
-import SceneRenderer from "./components/SceneRenderer";
-import axios from "axios";
 import {
   API_URL,
   ActionType,
@@ -23,22 +10,6 @@ import {
 import ReactPlayer from "react-player";
 import { UserContext } from "./utils/UserContext";
 import { Link } from "react-router-dom";
-
-// function App() {
-//   return (
-//     <>
-//       <main className="min-h-screen bg-[#110E1B] grid place-content-center">
-//         <SceneRenderer
-//           height={270}
-//           width={479}
-//           // 479x270
-//           // 320x180
-//           url="http://localhost:3000/index.m3u8"
-//         />
-//       </main>
-//     </>
-//   );
-// }
 
 function HeroFeed() {
   const [isVideoReady, setIsVideoReady] = React.useState(false);
@@ -53,7 +24,7 @@ function HeroFeed() {
       } catch (error) {
         console.error("Error fetching data:", error);
       }
-    }, 3000); // Interval set to 3 seconds
+    }, 2500);
 
     return () => {
       clearInterval(interval);
@@ -87,12 +58,6 @@ function HeroFeed() {
                   payload: state,
                 });
               }
-
-              // if (state.loggedIn) {
-
-              // }else{
-
-              // }
             }}
             className="bg-white hover:bg-[#110E1B] lg:w-fit w-full  border block border-transparent hover:border-white transition-all hover:text-white px-2 py-1 rounded-sm mt-4 font-medium"
           >
@@ -146,49 +111,65 @@ function HeroFeed() {
   );
 }
 
-function ScreenMain() {
-  {
-    /* <div className="lg:pl-5 pl-16 w-full p-5">
-              <HeroFeed />
-              <section className="grid lg:grid-cols-3 gap-5 mt-5">
-                <Feed />
-                <Feed />
-                <Feed />
-                <Feed />
-                <Feed />
-                <Feed />
-                <Feed />
-                <Feed />
-                <Feed />
-              </section>
-            </div> */
-  }
-}
-
 export function HomeScreenDashboard() {
-  const [data, setData] = React.useState<any[]>([]);
+  const [data, setData] = React.useState<
+    {
+      createdAt: string;
+      id: string;
+      videourl: string;
+      userName: string;
+      profilePic: string;
+    }[]
+  >([]);
 
   useEffect(() => {
     (async () => {
       const response = await AxiosDefined.get(API_URL + "/videos");
-      setData(response.data);
+      const Data = response.data as {
+        name: string;
+        profilePic: string;
+        _id: string;
+        user_data: {
+          createdAt: string;
+          id: string;
+          videourl: string;
+        }[];
+      }[];
+
+      setData(
+        Data.map((item) =>
+          item.user_data.map((i) => {
+            return {
+              createdAt: i.createdAt,
+              id: i.id,
+              videourl: i.videourl,
+              userName: item.name,
+              profilePic: item.profilePic,
+            };
+          })
+        ).flat()
+      );
     })();
   }, []);
-  console.log(data);
+
   return (
     <>
       <HeroFeed />
       <section className="grid lg:grid-cols-3 gap-5 mt-5">
-        {}
-        {/* <Feed />
-        <Feed />
-        <Feed />
-        <Feed />
-        <Feed />
-        <Feed />
-        <Feed />
-        <Feed />
-        <Feed /> */}
+        {data.map((videItem) => {
+          return (
+            <Feed
+              key={videItem.id}
+              id={videItem.id}
+              url={videItem.videourl}
+              userName={videItem.userName}
+              playerMode
+              userPhoto={videItem.profilePic}
+              uploadDate={videItem.createdAt}
+              thumbnail=""
+            />
+          );
+        })}
       </section>
     </>
   );
@@ -196,12 +177,13 @@ export function HomeScreenDashboard() {
 
 export function Feed({
   url,
-  thumbnail,
   uploadDate,
   userName,
   userPhoto,
   id,
+  playerMode,
 }: {
+  playerMode?: boolean;
   id: string;
   url: string;
   userName: string;
@@ -211,7 +193,7 @@ export function Feed({
 }) {
   return (
     <Link
-      to={"/editor/" + id}
+      to={playerMode ? "/player/" + id : "/editor/" + id}
       className="h-48 w-full grid-rows-12 p-2 grid  border gap-1 rounded-md"
     >
       <div className="row-span-9 bg-gray-200/20 rounded-md h-full"></div>

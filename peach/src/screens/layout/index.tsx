@@ -14,14 +14,9 @@ import {
 import ReactDOM from "react-dom";
 import { cn } from "../../lib/utils";
 import Logo from "../../assets/Logo.png";
-import { Outlet, redirect, useLocation, useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
-import {
-  API_URL,
-  API_VERSION,
-  ActionType,
-  AxiosDefined,
-} from "../../utils/contants";
+import { Outlet, useNavigate } from "react-router-dom";
+import { AxiosError } from "axios";
+import { API_URL, ActionType, AxiosDefined } from "../../utils/contants";
 import { UserContext } from "../../utils/UserContext";
 
 export default function LayoutScreen() {
@@ -50,9 +45,7 @@ const ImageVariants = [
 ] as const;
 
 function VideoProcessingInput() {
-  const [videoURL, setVideoURL] = React.useState<string>(
-    "rtsp://localhost:8554/live/1"
-  );
+  const [videoURL, setVideoURL] = React.useState<string>("");
   const [videoProcessingStatus, setVideoProcessingStatus] = React.useState<
     "processing" | "done" | "idle"
   >("idle");
@@ -397,19 +390,14 @@ function AccountForm() {
                 type: ActionType.TOGGLE_MODAL,
                 payload: state,
               });
-              // localStorage.setItem(
-              //   "user",
-              //   JSON.stringify({
-              //     email: email as string,
-              //     password: formData.get("password"),
-              //   })
-              // );
             }
           }
         } catch (err) {
           const e = err as AxiosError;
-          // @ts-ignore
-          alert(e.response?.data.message);
+          if (e.response) {
+            const Data = e.response.data as { message: string };
+            alert(Data.message);
+          }
         }
       }}
     >

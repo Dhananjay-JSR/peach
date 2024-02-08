@@ -1,9 +1,10 @@
 import datetime
+import json
 import signal
 import threading
 import time
 import bcrypt
-from flask import Flask, request, send_from_directory, session
+from flask import Flask, jsonify, request, send_from_directory, session
 import uuid
 import os
 import subprocess
@@ -181,8 +182,10 @@ def get_all_video():
       200:
         description: List of all videos
     """
-    data = collection.find({}, {"user_data": 1,"name":1,"profilePic":1})
-    return data
+    data = list(collection.find({}, {"user_data": 1,"name":1,"profilePic":1}))
+    return json.dumps(data, default=str)
+
+
 
 # Get all jobs of a user
 @app.get("/api/v1/jobs")

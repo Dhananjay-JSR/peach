@@ -5,7 +5,7 @@ import SceneRenderer from "../components/SceneRenderer";
 import { API_URL, AxiosDefined, OverlayData } from "../utils/contants";
 import React from "react";
 import { cn } from "../lib/utils";
-import { Back, BoxArrowLeft } from "react-bootstrap-icons";
+import { BoxArrowLeft } from "react-bootstrap-icons";
 
 export default function EditorScreen() {
   const { state } = useContext(UserContext);
@@ -23,26 +23,13 @@ export default function EditorScreen() {
     "processing" | "done" | "idle"
   >("idle");
 
-  //   useEffect(() => {
-  //     if (state.loggedIn === false) {
-  //       navigate("/playback/" + id);
-  //     }
-  //   }, []);
   console.log(OverlayState);
   useEffect(() => {
     if (state.loggedIn === false) {
       navigate("/player/" + id);
     }
-    // let Intervale;
+
     (async () => {
-      //   setVideoProcessingStatus("processing");
-      //   Intervale = setInterval(async () => {
-      //     const response = await AxiosDefined.get(API_URL + "/job/" + id);
-      //     if (response.data.status == "running") {
-      //       setVideoProcessingStatus("done");
-      //       clearInterval(Intervale);
-      //     }
-      //   }, 1000);
       const response = await AxiosDefined.get(API_URL + "/job/" + id + "/data");
 
       setOverlayState(response.data.overlayData);
@@ -51,10 +38,6 @@ export default function EditorScreen() {
         setVideoURL(API_URL + "/stream/" + id + "/index.m3u8");
       }, 50);
     })();
-
-    // return () => {
-    // //   clearInterval(Intervale);
-    // };
   }, []);
 
   useEffect(() => {
@@ -124,25 +107,6 @@ export default function EditorScreen() {
             </main>
           </>
         )}
-        {/* {videoProcessingStatus === "processing" ? (
-          <>
-            <div className="h-[270px] animate-pulse w-[479px] bg-gray-300/40 grid place-content-center">
-              <p className="text-white">Processing Video</p>
-            </div>
-          </>
-        ) : (
-          <></>
-        )} */}
-        {}
-        {/* <main className=" bg-[#110E1B] grid place-content-center">
-          <SceneRenderer
-            height={270}
-            width={479}
-            url={API_URL + "/stream/" + id + "/index.m3u8"}
-            Overlay={OverlayState}
-            setOverlay={setOverlayState}
-          />
-        </main> */}
       </div>
     </>
   );
