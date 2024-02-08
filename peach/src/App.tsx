@@ -308,4 +308,4 @@ function Feed() {
   );
 }
 
-export default App;
+export default MainScreen;
