@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import ReactDOM from "react-dom";
+import { OverlayData } from "../../utils/contants";
 
 export default function ContextMenuRenderer({
   ChildrenMoving,
@@ -20,16 +21,7 @@ export default function ContextMenuRenderer({
   }[];
 
   Ref: React.MutableRefObject<HTMLDivElement | undefined>;
-  setOverlay: React.Dispatch<
-    React.SetStateAction<
-      {
-        type: "text" | "sticker";
-        content: string | undefined;
-        id: string;
-        position: { x: number; y: number };
-      }[]
-    >
-  >;
+  setOverlay: React.Dispatch<React.SetStateAction<OverlayData[]>>;
   setShowContextMenu: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   useEffect(() => {
@@ -69,10 +61,17 @@ export default function ContextMenuRenderer({
                   setOverlay((prev) => [
                     ...prev,
                     {
+                      height: 100,
+                      width: 100,
+                      rotate: 0,
+                      transform: {
+                        x: 0,
+                        y: 0,
+                      },
                       id: Math.random().toString(),
                       position: {
-                        x: ContextMenuPosition.x - Rect.left,
-                        y: ContextMenuPosition.y - Rect.top,
+                        left: ContextMenuPosition.x - Rect.left,
+                        top: ContextMenuPosition.y - Rect.top,
                       },
                       content: undefined,
                       type: "text",
@@ -102,10 +101,17 @@ export default function ContextMenuRenderer({
                       setOverlay((prev) => [
                         ...prev,
                         {
+                          height: 100,
+                          width: 100,
+                          rotate: 0,
+                          transform: {
+                            x: 0,
+                            y: 0,
+                          },
                           id: Math.random().toString(),
                           position: {
-                            x: ContextMenuPosition.x - Rect.left,
-                            y: ContextMenuPosition.y - Rect.top,
+                            left: ContextMenuPosition.x - Rect.left,
+                            top: ContextMenuPosition.y - Rect.top,
                           },
                           content: d.src,
                           type: "sticker",

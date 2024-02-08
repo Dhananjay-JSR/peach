@@ -1,28 +1,32 @@
 import React, { useRef, useEffect, MutableRefObject } from "react";
 import { XOctagonFill } from "react-bootstrap-icons";
 import { cn } from "../../lib/utils";
+import { OverlayData } from "../../utils/contants";
 
 export default function Handler({
   children,
   ParentNotifier,
   Position,
   id,
-  onClose,
+  setOverlay,
+  // onClose,
+  viewerOnly,
+  height,
+  rotate,
+  transform,
+  width,
 }: {
+  rotate: number;
+  height: number;
+  width: number;
+  transform: {
+    x: number;
+    y: number;
+  };
+
+  viewerOnly?: boolean;
   id?: string;
-  onClose?: React.Dispatch<
-    React.SetStateAction<
-      {
-        type: "text" | "sticker";
-        content: string | undefined;
-        id: string;
-        position: {
-          x: number;
-          y: number;
-        };
-      }[]
-    >
-  >;
+  setOverlay: React.Dispatch<React.SetStateAction<OverlayData[]>>;
   Position: {
     top: number;
     left: number;
@@ -30,19 +34,20 @@ export default function Handler({
   children?: React.ReactNode;
   ParentNotifier: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  // console.log(overlayData);
   const [mouseDown, setMouseDown] = React.useState(false);
   const [ActionType, setActionType] = React.useState<
     "resize" | "move" | "rotate" | "none"
   >("none");
 
-  const [rotate, setRotate] = React.useState(0);
+  // const [rotate, setRotate] = React.useState(overlayData?.transform.rotate);
 
-  const [height, setHeight] = React.useState<number>(100);
-  const [width, setWidth] = React.useState<number>(100);
-  const [transform, setTransform] = React.useState({
-    x: 0,
-    y: 0,
-  });
+  // const [height, setHeight] = React.useState<number>(overlayData.height);
+  // const [width, setWidth] = React.useState<number>(overlayData.width);
+  // const [transform, setTransform] = React.useState({
+  // x: overlayData.transform.x,
+  // y: overlayData.transform.y,
+  // });
 
   const [initialCLickPosition, setInitialCLickPosition] = React.useState({
     x: 0,
@@ -51,6 +56,23 @@ export default function Handler({
 
   const Ref = useRef<HTMLDivElement>();
 
+  // useEffect(() => {
+  //   onClose((prev) => {
+  //     return prev.map((data) => {
+  //       if (data.id == id) {
+  //         return {
+  //           ...data,
+  //           height: height,
+  //           width: width,
+  //           transform: transform,
+  //           rotate: rotate,
+  //         };
+  //       }
+  //       return data;
+  //     });
+  //   });
+  // });
+
   useEffect(() => {
     const MouseMoveEvent = (e: MouseEvent) => {
       if (mouseDown) {
@@ -58,18 +80,54 @@ export default function Handler({
           const Diff = e.clientY - initialCLickPosition.y;
           if (height && width) {
             const NewHeight = height + Diff;
-            setHeight(NewHeight);
+            // setHeight(NewHeight);
+            setOverlay((prev) =>
+              prev.map((data) => {
+                if (data.id == id) {
+                  return {
+                    ...data,
+                    height: NewHeight,
+                  };
+                }
+                return data;
+              })
+            );
             const DIffX = e.clientX - initialCLickPosition.x;
             const NewWidth = width + DIffX;
-            setWidth(NewWidth);
+            // (NewWidth);
+            setOverlay((prev) =>
+              prev.map((data) => {
+                if (data.id == id) {
+                  return {
+                    ...data,
+                    width: NewWidth,
+                  };
+                }
+                return data;
+              })
+            );
           }
         } else if (ActionType == "move") {
           const DiffX = transform.x + e.clientX - initialCLickPosition.x;
           const DiffY = transform.y + e.clientY - initialCLickPosition.y;
-          setTransform({
-            x: DiffX,
-            y: DiffY,
-          });
+          // setTransform({
+          //   x: DiffX,
+          //   y: DiffY,
+          // });
+          setOverlay((prev) =>
+            prev.map((data) => {
+              if (data.id == id) {
+                return {
+                  ...data,
+                  transform: {
+                    x: DiffX,
+                    y: DiffY,
+                  },
+                };
+              }
+              return data;
+            })
+          );
         } else if (ActionType == "rotate") {
           const LocalRef = Ref.current;
           if (LocalRef) {
@@ -81,7 +139,18 @@ export default function Handler({
             };
             const Degree =
               (Math.atan2(DiffY - origin.y, DiffX - origin.x) * 180) / Math.PI;
-            setRotate(Degree);
+            // setRotate(Degree);
+            setOverlay((prev) =>
+              prev.map((data) => {
+                if (data.id == id) {
+                  return {
+                    ...data,
+                    rotate: Degree,
+                  };
+                }
+                return data;
+              })
+            );
           }
         }
       }
@@ -121,7 +190,10 @@ export default function Handler({
         }}
         ref={Ref as MutableRefObject<HTMLDivElement>}
         className={cn(
-          "h-full w-full group relative border transition-all border-dashed border-opacity-0 hover:border-opacity-25 active:border-opacity-100 border-white"
+          "h-full w-full group relative border transition-all border-dashed border-opacity-0 hover:border-opacity-25 active:border-opacity-100 border-white",
+          {
+            "pointer-events-none": viewerOnly,
+          }
         )}
       >
         <div
@@ -157,8 +229,11 @@ export default function Handler({
         <button
           onMouseDown={() => {
             setMouseDown(true);
-            if (onClose && id) {
-              onClose((prev) => prev.filter((data) => data.id != id));
+            // if (onClose && id) {
+            //   onClose((prev) => prev.filter((data) => data.id != id));
+            // }
+            if (setOverlay && id) {
+              setOverlay((prev) => prev.filter((data) => data.id != id));
             }
           }}
           onMouseUp={() => {

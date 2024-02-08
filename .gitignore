@@ -2,3 +2,4 @@
 __pycache__
 server/static/*
 server/media/*
+/rtsp_server_mock

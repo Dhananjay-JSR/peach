@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, MutableRefObject } from "react";
 import { Check, X } from "react-bootstrap-icons";
+import { OverlayData } from "../../utils/contants";
 
 export default function TextInputPlaceholder({
   position,
@@ -7,23 +8,11 @@ export default function TextInputPlaceholder({
   setPlaceholder,
 }: {
   position: {
-    x: number;
-    y: number;
+    top: number;
+    left: number;
   };
   id: string;
-  setPlaceholder: React.Dispatch<
-    React.SetStateAction<
-      {
-        type: "text" | "sticker";
-        content: string | undefined;
-        id: string;
-        position: {
-          x: number;
-          y: number;
-        };
-      }[]
-    >
-  >;
+  setPlaceholder: React.Dispatch<React.SetStateAction<OverlayData[]>>;
 }) {
   const [value, setvalue] = React.useState("");
   const InpuyRef = useRef<HTMLInputElement>();
@@ -33,7 +22,10 @@ export default function TextInputPlaceholder({
   }, []);
   return (
     <div className="fixed h-screen w-screen">
-      <div className="absolute" style={{ left: position.x, top: position.y }}>
+      <div
+        className="absolute"
+        style={{ left: position.left, top: position.top }}
+      >
         <div className="relative">
           <input
             ref={InpuyRef as MutableRefObject<HTMLInputElement>}
